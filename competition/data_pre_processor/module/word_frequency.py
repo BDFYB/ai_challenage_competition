@@ -5,13 +5,15 @@ import jieba
 def separate_by_words_and_letter(sentences):
     letters = {}
     words = {}
-    letters['<s>'] = 0
-    letters['</s>'] = 0
+    words['<s>'] = 0
+    words['</s>'] = 0
     """
     根据sentences list做分词，并统计词频
     """
+    max_sentence_length = 0
     for sentence in sentences:
-        letters['<s>'] += 1
+        current_sentence_length = 2
+        words['<s>'] += 1
         words['</s>'] += 1
         for letter in sentence:
             if letter in letters:
@@ -20,10 +22,14 @@ def separate_by_words_and_letter(sentences):
                 letters[letter] = 1
         seg_list = jieba.lcut(sentence, cut_all=False)
         for word in seg_list:
+            current_sentence_length += 1
             if word in words:
                 words[word] += 1
             else:
                 words[word] = 1
+        if max_sentence_length < current_sentence_length:
+            max_sentence_length = current_sentence_length
+    print("max_sentence length: %s" % max_sentence_length)
     sorted_letters = sorted(letters.items(), key=lambda letters:letters[1], reverse=True)
     sorted_words = sorted(words.items(), key=lambda words:words[1], reverse=True)
     return sorted_letters, sorted_words

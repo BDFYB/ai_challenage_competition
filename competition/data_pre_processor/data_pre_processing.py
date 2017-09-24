@@ -50,16 +50,27 @@ if __name__ == "__main__":
     #功能开关
     generate_word_frequency = 1
     generate_TFRecord = 0
-    generate_PICKLE_record = 0
+    generate_PICKLE_record = 1
     """
     读取描述文件，获得sentences list及照片描述的list
     """
+    """
+    #测试数据
     current_dir = os.path.split(os.path.realpath(sys.argv[0]))[0]
     input_annotions_file = current_dir + '/ori_data/caption_train_annotations_part.json'
     input_image_dir = current_dir + '/ori_data/caption_train_images_part'
     output_processed_word_jieba = current_dir + '/processed_data/word_frequency_jieba'
     output_processed_word_raw = current_dir + '/processed_data/word_frequency_single'
     output_word_dict = current_dir + '/processed_data/word_dict_pickle'
+    """
+
+    #正式数据
+    current_dir = '/home/fzy/sea/challenger/ai_challenger_caption_train_20170902/'
+    input_annotions_file = current_dir + 'caption_train_annotations_20170902.json'
+    input_image_dir = current_dir + 'caption_train_images_20170902/'
+    output_processed_word_jieba = current_dir + 'processed_data/word_frequency_jieba'
+    output_processed_word_raw = current_dir + 'processed_data/word_frequency_single'
+    output_word_dict = current_dir + 'processed_data/word_dict_pickle'
 
     json_str = load_data(input_annotions_file)
     image_desc = []

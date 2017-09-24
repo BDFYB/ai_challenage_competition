@@ -6,6 +6,7 @@ import os
 import sys
 import pickle
 import random
+import copy
 
 
 def _int64_feature(value):
@@ -33,12 +34,14 @@ class data_reader(object):
        TFR:0 
        PKL:1
     """
-    def __init__(self, data_file_name, word_dict_file_name, batch_size, file_type=1):
+    def __init__(self, data_file_name, word_dict_file_name, batch_size, sentence_length = 36, file_type=1):
         #文件名请填写绝对路径
         self.file_type = file_type
         self.data_file_name = data_file_name
         self.word_dict_file_name = word_dict_file_name
         self.batch_size = batch_size
+        #每句话最长长度，实际值34，设为36
+        self.max_sentence_length = sentence_length
 
         #读取word dict
         word_file_fd = open(word_dict_file_name, "rb")
@@ -77,6 +80,7 @@ class data_reader(object):
             return img_data, caption
 
     def get_data_in_batch(self, changed_batch_size = -1):
+
         if self.file_type == 0:
             raise Exception("实例文件类型为TFR，暂未支持用batch获取")
 
@@ -84,12 +88,33 @@ class data_reader(object):
         if changed_batch_size > 0:
             size = changed_batch_size
 
+        img_batch_list = []
+        single_caption_list = []
+        caption_batch_list = []
+        for i in range(size):
+            single_caption_list.append(0)
+        for i in range(self.max_sentence_length):
+            caption_batch_list.append(copy.deepcopy(single_caption_list))
+        caption_batch_list[9][1] =1
+
         num_range = range(len(self.data_list))
         index_list = random.sample(num_range, size)
-        ret_batch = []
+        num_count = 0
+        ori_batch = []
         for i in index_list:
-            ret_batch.append(self.data_list[i])
-        return ret_batch
+            ori_batch.append(self.data_list[i])
+            img_batch_list.append(self.data_list[i]['image_id'])
+            caption_word_list = self.data_list[i]['caption'].split(' ')
+            word_position = 0
+            for word in caption_word_list:
+                if word not in self.word_dict:
+                    print("[WARNING] word %s was not in dict" % word)
+                else:
+                    caption_batch_list[word_position][num_count] = self.word_dict[word]
+                word_position += 1
+            num_count += 1
+
+        return caption_batch_list, img_batch_list, ori_batch
 
 
     def _read_and_decode_in_example_proto(self):
@@ -147,7 +172,11 @@ if __name__ == "__main__":
        PKL:1 默认
     """
     file_type=1
-    current_dir = os.path.split( os.path.realpath(sys.argv[0]))[0]
+    #测试数据
+    #current_dir = os.path.split( os.path.realpath(sys.argv[0]))[0]
+    #正式数据
+    current_dir = '/home/fzy/sea/challenger/ai_challenger_caption_train_20170902/'
+
     word_dict_file_name = current_dir + "/processed_data/word_dict_pickle"
 
 
@@ -155,8 +184,8 @@ if __name__ == "__main__":
     #   TFR文件格式例子
     if file_type == 0:
         data_file_name = current_dir + "/processed_data/img_TFRecord"
-        reader = data_reader(data_file_name, word_dict_file_name, batch_size = 2, file_type=0)
-        
+        reader = data_reader(data_file_name, word_dict_file_name, batch_size = 2, 
+                             sentence_length = 36, file_type=0)
         #读取Word词典文件
         word_dict = reader.get_word_dict()
         print(word_dict)
@@ -180,10 +209,24 @@ if __name__ == "__main__":
         
         #读取Word词典文件
         word_dict = reader.get_word_dict()
-        print("word dict: \n %s" % word_dict)
+        print("word dict: \n %s" % word_dict['</s>'])
 
         image_info_list = reader.get_main_data_in_PKL()
-        print("data info: \n %s" % image_info_list)
+        print("data info: \n %s" % image_info_list[0])
 
-        data_batch = reader.get_data_in_batch()
-        print ("batched data info: \n %s" % data_batch)
+        caption_batch_list, img_batch_list, ori_batch = reader.get_data_in_batch()
+        print ("batched data info total: \n %s" % ori_batch)
+        print ("batched data info image: \n %s" % caption_batch_list)
+        print ("batched data info data: \n %s" % img_batch_list)
+
+        #testing
+        key_list = []
+        value_list = []
+        for i in range(36):
+            for key,value in word_dict.items( ):
+                key_list.append(key)
+                value_list.append(value)
+            if caption_batch_list[i][1] in value_list:
+                get_value_index=value_list.index(caption_batch_list[i][1])
+                print(key_list[get_value_index])
+
