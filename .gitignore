@@ -1,0 +1,6 @@
+testings/
+competition/faster_RCNN_module/
+competition/original_data/
+*.pyc
+*__pycache__*
+*.DS_Store
